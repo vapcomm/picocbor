@@ -31,6 +31,7 @@ import kotlin.test.assertEquals
  *
  * Test data taken from here: https://github.com/cbor/test-vectors/blob/master/appendix_a.json
  */
+@OptIn(ExperimentalStdlibApi::class)
 class CborEncoderTest {
 
     @Test
@@ -64,6 +65,8 @@ class CborEncoderTest {
         assertEquals("19ffff", PicoCbor.encodeLong(65535L).toHexString())
         assertEquals("1a00010000", PicoCbor.encodeLong(65536L).toHexString())
         assertEquals("1b000000e8d4a51000", PicoCbor.encodeLong(1000000000000L).toHexString())
+        assertEquals("1b7fffffffffffffff", PicoCbor.encodeLong(9223372036854775807L).toHexString())   // Long.MAX_VALUE
+        assertEquals("3b7fffffffffffffff", PicoCbor.encodeLong(-9223372036854775807L - 1L).toHexString())   // Long.MIN_VALUE
     }
 
     @Test

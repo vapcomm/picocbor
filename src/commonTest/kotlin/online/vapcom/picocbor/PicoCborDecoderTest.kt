@@ -28,6 +28,7 @@ import kotlin.test.assertEquals
 /**
  * CBOR decoder tests
  */
+@OptIn(ExperimentalStdlibApi::class)
 class PicoCborDecoderTest {
 
     @Test
@@ -43,7 +44,7 @@ class PicoCborDecoderTest {
 
     @Test
     fun decodeOneInt128() {
-        val y= 128
+        val y = 128
 
         val cborY = PicoCbor.encodeInt(y)
         assertEquals("1880", cborY.toHexString())
@@ -55,7 +56,7 @@ class PicoCborDecoderTest {
     @Test
     fun decodeTwoInts() {
         val x = 64
-        val y= 128
+        val y = 128
 
         val cborX = PicoCbor.encodeInt(x)
         assertEquals("1840", cborX.toHexString())
@@ -65,6 +66,33 @@ class PicoCborDecoderTest {
         val decoder = PicoCborDecoder(cborX + cborY)
         assertEquals(x, decoder.int())
         assertEquals(y, decoder.int())
+    }
+
+    @Test
+    fun decodeLong() {
+        // test cases taken from encodeLong() tests
+        val encoded = "00" + // 0L
+                "01" +       // 1L
+                "17" +       // 23L
+                "1818" +     // 24L
+                "18ff" +     // 255L
+                "19ffff" +   // 65535L
+                "1a00010000" + // 65536L
+                "1b000000e8d4a51000" +  // 1000000000000L
+                "1b7fffffffffffffff" +  // 9223372036854775807L == Long.MAX_VALUE
+                "3b7fffffffffffffff"    // -9223372036854775807L - 1L == Long.MIN_VALUE
+
+        val decoder = PicoCborDecoder(encoded.hexToByteArray())
+        assertEquals(0L, decoder.long())
+        assertEquals(1L, decoder.long())
+        assertEquals(23L, decoder.long())
+        assertEquals(24L, decoder.long())
+        assertEquals(255L, decoder.long())
+        assertEquals(65535L, decoder.long())
+        assertEquals(65536L, decoder.long())
+        assertEquals(1000000000000L, decoder.long())
+        assertEquals(9223372036854775807L, decoder.long())
+        assertEquals(-9223372036854775807L - 1L, decoder.long())
     }
 
     @Test
@@ -78,7 +106,7 @@ class PicoCborDecoderTest {
                 "fabf800000" + // -1.0F
                 "fac7c35000"   // -100000.0F
 
-        val decoder = PicoCborDecoder(src.decodeHex())
+        val decoder = PicoCborDecoder(src.hexToByteArray())
 
         assertEquals(100000.0F, decoder.float())
         assertEquals(3.4028234663852886e+38F, decoder.float())
@@ -97,7 +125,7 @@ class PicoCborDecoderTest {
                 "4449455446" +
                 "5818000102030405060708090a0b0c0d0e0f1011121314151617"
 
-        val decoder = PicoCborDecoder(src.decodeHex())
+        val decoder = PicoCborDecoder(src.hexToByteArray())
 
         assertEquals("", decoder.byteString().toHexString())
         assertEquals("61", decoder.byteString().toHexString())
@@ -109,13 +137,13 @@ class PicoCborDecoderTest {
     @Test
     fun decodeStrings() {
         val src = "60" +  // ""
-                  "6161" +              // a
-                  "6449455446" +        // IETF
-                  "62225c" +            // "\
-                  "62c3bc" +            // ü
-                  "6ad0b0d0b1d0b2d0b3d0b4"  // абвгд
+                "6161" +              // a
+                "6449455446" +        // IETF
+                "62225c" +            // "\
+                "62c3bc" +            // ü
+                "6ad0b0d0b1d0b2d0b3d0b4"  // абвгд
 
-        val decoder = PicoCborDecoder(src.decodeHex())
+        val decoder = PicoCborDecoder(src.hexToByteArray())
 
         assertEquals("", decoder.string())
         assertEquals("a", decoder.string())
@@ -133,7 +161,7 @@ class PicoCborDecoderTest {
                 "976060606060606060606060606060606060606060606060" +    // 23 empty strings
                 "9818010101010101010101010101010101010101010101010101"  // 24 ones
 
-        val decoder = PicoCborDecoder(src.decodeHex())
+        val decoder = PicoCborDecoder(src.hexToByteArray())
         assertEquals(0, decoder.arraySize())
 
         assertEquals(1, decoder.arraySize())
@@ -158,7 +186,7 @@ class PicoCborDecoderTest {
                 "82fa40800000fa3f800000" + // 4F, 1F
                 "83fa40800000fa3f800000fa40000000" // 4F, 1F, 2F
 
-        val decoder = PicoCborDecoder(src.decodeHex())
+        val decoder = PicoCborDecoder(src.hexToByteArray())
 
         assertEquals(0, decoder.floatArray().size)
 
@@ -184,7 +212,7 @@ class PicoCborDecoderTest {
                 "a10060" +          // <0,"">
                 "a2616101616202"    // <a,1>, <b,2>
 
-        val decoder = PicoCborDecoder(src.decodeHex())
+        val decoder = PicoCborDecoder(src.hexToByteArray())
 
         assertEquals(0, decoder.mapSize())
 

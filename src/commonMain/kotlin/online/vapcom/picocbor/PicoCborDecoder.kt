@@ -91,6 +91,84 @@ class PicoCborDecoder(private val src: ByteArray, private var offset: Int = 0) {
     }
 
     /**
+     * Decode one Long value
+     */
+    fun long(): Long {
+        checkSize(1)
+        val b = src[offset].toInt() and 0xFF
+
+        return when (PicoCbor.MajorType.ofByte(b)) {
+            PicoCbor.MajorType.UNSIGNED_INTEGER -> unsignedLong()
+            PicoCbor.MajorType.NEGATIVE_INTEGER -> {
+                -1 - unsignedLong()
+            }
+
+            else -> throw PicoCborException(119, 1, "$offset, $b")
+        }
+    }
+
+    /**
+     * Decode unsigned integer, but returns signed Long
+     */
+    private fun unsignedLong(): Long {
+        val b = src[offset].toInt() and 0xFF
+
+        when (PicoCbor.AdditionalInformation.ofByte(b)) {
+            PicoCbor.AdditionalInformation.DIRECT -> {
+                offset += 1
+                return b.toLong() and 31L
+            }
+
+            PicoCbor.AdditionalInformation.ONE_BYTE -> {
+                checkSize(2)
+                val result = src[offset + 1].toInt() and 0xFF
+                offset += 2
+                return result.toLong()
+            }
+
+            PicoCbor.AdditionalInformation.TWO_BYTES -> {
+                checkSize(3)
+                val hb = (src[offset + 1].toInt() shl 8) and 0xFF00
+                val lb = src[offset + 2].toInt() and 0xFF
+                val result = hb or lb
+                offset += 3
+                return result.toLong()
+            }
+
+            PicoCbor.AdditionalInformation.FOUR_BYTES -> {
+                checkSize(5)
+                val fourByteValue: Int =
+                    ((src[offset + 1].toInt() and 0xFF) shl 24) or
+                    ((src[offset + 2].toInt() and 0xFF) shl 16) or
+                    ((src[offset + 3].toInt() and 0xFF) shl 8) or
+                    (src[offset + 4].toInt() and 0xFF)
+
+                offset += 5
+                return fourByteValue.toLong()
+            }
+
+            PicoCbor.AdditionalInformation.EIGHT_BYTES -> {
+                checkSize(9)
+                val eightByteValue: Long =
+                    ((src[offset + 1].toLong() and 0xFF) shl 56) or
+                    ((src[offset + 2].toLong() and 0xFF) shl 48) or
+                    ((src[offset + 3].toLong() and 0xFF) shl 40) or
+                    ((src[offset + 4].toLong() and 0xFF) shl 32) or
+                    ((src[offset + 5].toLong() and 0xFF) shl 24) or
+                    ((src[offset + 6].toLong() and 0xFF) shl 16) or
+                    ((src[offset + 7].toLong() and 0xFF) shl 8) or
+                    (src[offset + 8].toLong() and 0xFF)
+
+                offset += 9
+                return eightByteValue
+            }
+
+            else -> throw PicoCborException(120, 1, "$offset, $b")
+        }
+    }
+
+
+    /**
      * Decode Float value in IEEE_754_SINGLE_PRECISION_FLOAT
      */
     fun float(): Float {
