@@ -3,6 +3,7 @@ Minimalistic approach to CBOR encoding
 
 This pure Kotlin multiplatform library brings simplest [CBOR](https://www.rfc-editor.org/rfc/rfc7049) implementation to any Kotlin project.
 
+See commonTest for CBOR encoding and decoding examples.
 
 ## Restrictions
 

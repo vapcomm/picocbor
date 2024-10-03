@@ -256,6 +256,22 @@ class PicoCborDecoder(private val src: ByteArray, private var offset: Int = 0) {
     }
 
     /**
+     * Decode fixed size array of elements of type T.
+     * Array may be empty, in this case only header is decoded.
+     * @param elementDecoder function to decode each element of array
+     */
+    fun <T> array(elementDecoder: (dec: PicoCborDecoder) -> T): List<T> {
+        val size = arraySize()
+        val result = ArrayList<T>(size)
+
+        repeat(size) {
+            result.add(elementDecoder(this))
+        }
+
+        return result
+    }
+
+    /**
      * Decode header of fixed size map.
      * @return number of elements in map
      */

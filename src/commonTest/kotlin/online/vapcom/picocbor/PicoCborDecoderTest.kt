@@ -24,6 +24,7 @@ package online.vapcom.picocbor
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * CBOR decoder tests
@@ -154,6 +155,9 @@ class PicoCborDecoderTest {
     }
 
 
+    /**
+     * It's an old fashion arrays decoding method, see decodeArrayGeneric() test for modern examples
+     */
     @Test
     fun decodeArrays() {
         val src = "80" +  // empty array
@@ -207,6 +211,28 @@ class PicoCborDecoderTest {
     }
 
     @Test
+    fun decodeArrayGeneric() {
+        val src = "80" +  // empty array
+                "8100" +  // [0]
+                "976060606060606060606060606060606060606060606060" +    // 23 empty strings
+                "9818010101010101010101010101010101010101010101010101"  // 24 ones
+
+        val decoder = PicoCborDecoder(src.hexToByteArray())
+        val empty = decoder.array { decoder.string() }
+        assertEquals(0, empty.size)
+
+        val oneZero = decoder.array { decoder.int() }
+        assertEquals("[0]", oneZero.toString())
+
+        val emptyStrings = decoder.array { decoder.string() }
+        assertEquals(23, emptyStrings.size)
+        emptyStrings.forEach { assertTrue { it.isEmpty() } }
+
+        val ones = decoder.array { decoder.int() }
+        assertEquals("[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]", ones.toString())
+    }
+
+        @Test
     fun decodeMaps() {
         val src = "a0" +            // empty Map
                 "a10060" +          // <0,"">
